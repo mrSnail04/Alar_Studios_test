@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="wrapper">
+    <!-- Таблица пользователей -->
+    <div class="users-table">
+
+        <table class="table">
+            <thead class="thead-dark">
+                <tr>
+                    <th scope="col">
+                        № id
+                    </th>
+                    <th scope="col">
+                        Имя пользователя
+                    </th>
+                    <th scope="col">
+                        Права
+                    </th>
+                    <th scope="col">
+                        {% if role_admin  %}
+                            <button class="btn btn-sm btn-primary" id="new-user" data-toggle="modal" data-target="#newUserModal">
+                                Новый пользователь
+                            </button>
+                        {% endif %}
+                    </th>
+                    <th scope="col">
+                        <a href="{{ url_for('logout') }}" class="btn btn-sm btn-warning">
+                            Выход
+                        </a>
+                    </th>
+                    <th scope="col">
+                    </th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for user in users %}
+                    <tr>
+                        <th scope="row">
+                            {{ user.id }}
+                        </th>
+                        {% if role_admin %}
+                        <td>
+                            <input class="userName" type="text" value="{{ user.username }}">
+                        </td>
+                        {% else %}
+                        <td>
+                            {{ user.username }}
+                        </td>
+                        {% endif %}
+                        {% if role_admin %}
+                        <td>
+                        <select class="userRole custom-select">
+                            <option {% if user.role == 'admin' %} selected {% endif %} value="admin">
+                                Администратор
+                            </option>
+                            <option {% if user.role == 'regular' %} selected {% endif %} value="regular">
+                                Посетитель
+                            </option>
+                        </select>
+                        </td>
+                        {% else %}
+                        <td>{{ user.role }}</td>
+                        {% endif %}
+                        {% if role_admin %}
+                            <td>
+                                <input type="password" class="userPassword input" name="password" placeholder="password">
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="changeUser(this, '{{ user.id }}')">
+                                    Сохранить
+                                </button>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-danger" onclick="deleteUser(this, '{{ user.id }}')">
+                                    Удалить
+                                </button>
+                            </td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+              </tbody>
+        </table>
+    </div>
+
+    <!-- Окно Новый пользователь -->
+    <div class="modal fade" id="newUserModal" tabindex="-1" role="dialog" aria-labelledby="new-user-modal-label" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="new-user-modal-label">
+                    Новый пользователь
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="form-group">
+                        <input type="text" id="username" class="input" name="username" placeholder="имя пользователя">
+                        <input type="password" id="password" class="input" name="password" placeholder="пароль">
+                    </div>
+                    <div class="form-group">
+                        <select class="custom-select" id="roleSelect">
+                            <option selected value="admin">Администратор</option>
+                            <option value="regular">Посетитель</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
+                <button type="button" class="btn btn-primary" id="new-user-save">Сохранить</button>
+            </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(function() {
+    $("#new-user-save").click(function(){
+        $.post('/create_user', {username: $('#username').val(), password: $('#password').val(), role: $('#roleSelect').val()}, function(data) {
+            console.log(data);
+            $('#newUserModal').modal('hide');
+            location.reload();
+        });
+    });
+});
+function changeUser(element, id) {
+    var username = element.parentNode.parentNode.getElementsByClassName('userName')[0].value;
+    var role = element.parentNode.parentNode.getElementsByClassName('userRole')[0].value;
+    var password = element.parentNode.parentNode.getElementsByClassName('userPassword')[0].value;
+    $.post('/edit_user/' + id, {username: username, role: role, password: password}, function(data) {
+        console.log(data);
+    });
+}
+function deleteUser(element, id) {
+    $.get('/delete_user/' + id, function(data) {
+        console.log(data);
+        element.parentNode.parentNode.remove();
+    });
+}
+</script>
+{% endblock %}
